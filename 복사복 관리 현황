@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>성당 복사복 통합 관리 시스템</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: radial-gradient(circle at 50% 50%, #0d1b2a 0%, #010811 100%);
+            color: #e2e8f0; padding: 25px; min-height: 100vh; position: relative; overflow-x: hidden;
+        }
+
+        body::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(1px 1px at 30px 40px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 70px 120px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 150px 200px, #d4af37, rgba(0,0,0,0));
+            background-size: 250px 250px; animation: twinkle 4s ease-in-out infinite; opacity: 0.4; z-index: -1;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+
+        header { text-align: center; margin-bottom: 30px; position: relative; }
+        .main-cross { color: #d4af37; font-size: 36px; text-shadow: 0 0 15px rgba(212, 175, 55, 0.7); line-height: 1; margin-bottom: 5px; }
+        h1 { font-family: 'Noto Serif KR', serif; color: #d4af37; font-size: 28px; letter-spacing: 2px; }
+        .subtitle { font-size: 13px; color: #8a99ad; margin-top: 5px; }
+
+        .header-tools { position: absolute; right: 10px; top: 20px; }
+        .btn-backup {
+            background: linear-gradient(135deg, #2b6cb0, #1a365d);
+            color: #fff; border: 1px solid rgba(212, 175, 55, 0.4); padding: 8px 14px;
+            border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .btn-backup:hover { border-color: #d4af37; transform: translateY(-1px); }
+
+        .main-container { display: flex; flex-direction: column; gap: 25px; }
+        .top-control-grid { display: grid; grid-template-columns: 1.6fr 0.8fr 0.8fr 0.8fr; gap: 20px; align-items: stretch; }
+        
+        .card { 
+            background: rgba(10, 25, 47, 0.85); border: 1px solid rgba(212, 175, 55, 0.25); 
+            border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); backdrop-filter: blur(6px);
+            display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s;
+        }
+        .card:hover { border-color: rgba(212, 175, 55, 0.5); }
+        .card-title { font-family: 'Noto Serif KR', serif; color: #d4af37; font-size: 14px; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(212, 175, 55, 0.15); padding-bottom: 6px; }
+
+        .summary-box-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: 100%; }
+        .summary-mini-item { 
+            background: linear-gradient(135deg, rgba(20, 45, 80, 0.7), rgba(5, 12, 24, 0.9));
+            border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 10px; padding: 14px 16px; 
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        }
+        .summary-text-side { display: flex; flex-direction: column; justify-content: center; }
+        
+        .summary-mini-item .label { font-size: 14px; color: #e2e8f0; font-weight: 700; margin-bottom: 4px; }
+        .summary-mini-item .count { font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: -0.5px; }
+        .summary-mini-item .count span { font-size: 15px; font-weight: 500; margin-left: 2px; color: #a4b3c6; }
+        .summary-icon-side { font-size: 36px; line-height: 1; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
+
+        .summary-mini-item.total .count { color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .summary-mini-item.laundry .count { color: #4dadf7; text-shadow: 0 0 10px rgba(77,173,247,0.3); }
+        .summary-mini-item.need .count { color: #ff6b6b; text-shadow: 0 0 10px rgba(255,107,107,0.3); }
+        .summary-mini-item.available .count { color: #51cf66; text-shadow: 0 0 10px rgba(81,207,102,0.3); }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-label { display: block; font-size: 11px; color: #8a99ad; margin-bottom: 4px; font-weight: 500; }
+        input, select { width: 100%; background: rgba(5, 12, 24, 0.8); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 10px 12px; border-radius: 6px; font-size: 12px; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15); }
+        
+        .btn-submit { 
+            width: 100%; color: #fff; border: none; padding: 11px; border-radius: 6px; 
+            font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 12px;
+        }
+        .btn-gold { background: linear-gradient(135deg, #b89130, #89691b); box-shadow: 0 2px 6px rgba(137,105,27,0.3); }
+        .btn-dark { background: linear-gradient(135deg, #4a5d78, #2d3b4f); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+        .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+
+        .table-card { background: rgba(10, 25, 47, 0.85); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 12px; padding: 22px; margin-top: 5px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 14px; }
+        th { background: rgba(5, 12, 24, 0.9); color: #a4b3c6; padding: 15px 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); font-weight: 500; font-size: 13px; }
+        td { padding: 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; }
+        tr:hover td { background: rgba(255, 255, 255, 0.03); }
+        
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; user-select: none; transition: transform 0.1s; }
+        .badge:active { transform: scale(0.95); }
+        .status-available { background: rgba(81, 207, 102, 0.15); color: #51cf66; border: 1px solid rgba(81, 207, 102, 0.2); }
+        .status-laundry { background: rgba(77, 173, 247, 0.15); color: #4dadf7; border: 1px solid rgba(77, 173, 247, 0.2); }
+        .status-need { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.2); }
+
+        .btn-action { padding: 4px 10px; border-radius: 4px; border: none; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0 2px; transition: opacity 0.2s; }
+        .btn-rotate { background-color: #4dadf7; color: #fff; }
+        .btn-delete { background-color: #ff6b6b; color: #fff; }
+        .btn-action:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="main-cross">†</div>
+        <h1>성당 복사복 통합 관리 시스템</h1>
+        <div class="subtitle">Altar Server Robe Management Dashboard</div>
+        
+        <!-- 데이터 강제 백업/저장용 신규 버튼 -->
+        <div class="header-tools">
+            <button class="btn-backup" onclick="downloadBackupFile()"><i class="fas fa-download"></i> 전체 데이터 파일 저장</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="top-control-grid">
+            <div class="card">
+                <div class="card-title"><i class="fas fa-chart-pie" style="color: #d4af37;"></i> 실시간 수량 현황</div>
+                <div class="summary-box-grid">
+                    <div class="summary-mini-item total">
+                        <div class="summary-text-side">
+                            <div class="label">전체 복사복</div>
+                            <div class="count" id="totalCount">0<span>벌</span></div>
+                        </div>
+                        <div class="summary-icon-side">✨</div>
+                    </div>
+                    <div class="summary-mini-item laundry">
+                        <div class="summary-text-side">
+                            <div class="label">세탁 중인 옷</div>
+                            <div class="count" id="laundryCount">0<span>벌</span></div>
+                        </div>
+                        <div class="summary-icon-side">🧺</div>
+                    </div>
+                    <div class="summary-mini-item need">
+                        <div class="summary-text-side">
+                            <div class="label">세탁 필요</div>
+                            <div class="count" id="needCount">0<span>벌</span></div>
+                        </div>
+                        <div class="summary-icon-side">🚨</div>
+                    </div>
+                    <div class="summary-mini-item available">
+                        <div class="summary-text-side">
+                            <div class="label">즉시 사용가능</div>
+                            <div class="count" id="availableCount">0<span>벌</span></div>
+                        </div>
+                        <div class="summary-icon-side">👕</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div>
+                    <div class="card-title"><i class="fas fa-plus-circle" style="color: #d4af37;"></i> 복사복 신규 등록</div>
+                    <form id="robeForm">
+                        <div class="form-group">
+                            <span class="form-label">고유 식별 식별번호</span>
+                            <input type="text" id="robeNum" placeholder="예: A-007" required>
+                        </div>
+                </div>
+                        <button type="submit" class="btn-submit btn-gold"><i class="fas fa-plus"></i> 등록하기</button>
+                    </form>
+            </div>
+
+            <div class="card">
+                <form id="renameForm">
+                    <div>
+                        <div class="card-title"><i class="fas fa-edit" style="color: #d4af37;"></i> 번호(이름) 변경</div>
+                        <div class="form-group">
+                            <span class="form-label">변경 대상 지정</span>
+                            <select id="selectRenameTarget" required>
+                                <option value="" disabled selected>선택</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <span class="form-label">새로운 명칭 부여</span>
+                            <input type="text" id="newRobeName" placeholder="새 번호 입력" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit btn-dark"><i class="fas fa-check"></i> 수정 완료</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <form id="laundryForm">
+                    <div>
+                        <div class="card-title"><i class="fas fa-soap" style="color: #d4af37;"></i> 세탁 출고 기록</div>
+                        <div class="form-group">
+                            <span class="form-label">대상 의류 코드</span>
+                            <select id="selectRobe" required>
+                                <option value="" disabled selected>복사복 번호 선택</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <span class="form-label">반출 날짜</span>
+                            <input type="date" id="laundryDate" required>
+                        </div>
+                        <div class="form-group">
+                            <span class="form-label">세탁 담당 지정</span>
+                            <input type="text" id="laundryIncharge" placeholder="담당자 (예: 김수녀님)" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit btn-gold"><i class="fas fa-save"></i> 일지 저장</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="card-title" style="margin-bottom: 18px; font-size: 15px;"><i class="fas fa-list-ul" style="color: #d4af37;"></i> 전체 복사복 세탁 및 수량 현황 목록</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>복사복 번호</th>
+                        <th>현재 상태 (클릭시 변경)</th>
+                        <th>마지막 세탁일</th>
+                        <th>세탁 담당자</th>
+                        <th>세탁 경과일</th>
+                        <th>관리 메뉴</th>
+                    </tr>
+                </thead>
+                <tbody id="robeTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const defaultData = [
+            { id: "A-001", status: "사용 가능", lastDate: "2026-06-20", member: "김수녀님", gap: "6일" },
+            { id: "A-002", status: "세탁 중", lastDate: "2026-06-25", member: "박바오로", gap: "1일" },
+            { id: "A-003", status: "세탁 필요", lastDate: "2026-05-15", member: "이베드로", gap: "42일" },
+            { id: "A-004", status: "사용 가능", lastDate: "2026-06-01", member: "박마리아", gap: "25일" },
+            { id: "A-005", status: "사용 가능", lastDate: "2026-06-18", member: "최요한", gap: "8일" },
+            { id: "A-006", status: "세탁 필요", lastDate: "2026-05-20", member: "강안드레아", gap: "37일" }
+        ];
+
+        // 브라우저 로컬 저장소 확인 및 세팅
+        let initialData = JSON.parse(localStorage.getItem('robeData'));
+        if (!initialData) {
+            initialData = defaultData;
+            localStorage.setItem('robeData', JSON.stringify(initialData));
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('robeData', JSON.stringify(initialData));
+        }
+
+        // 전체 데이터를 외부 파일로 내보내기 및 다운로드 기능
+        function downloadBackupFile() {
+            const dataStr = JSON.stringify(initialData, null, 4);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `복사복_전체데이터_백업_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert("전체 데이터가 텍스트 파일(.json)로 성공적으로 저장 및 다운로드되었습니다!");
+        }
+
+        function updateSummary() {
+            document.getElementById('totalCount').innerHTML = `${initialData.length}<span>벌</span>`;
+            document.getElementById('laundryCount').innerHTML = `${initialData.filter(d => d.status === "세탁 중").length}<span>벌</span>`;
+            document.getElementById('needCount').innerHTML = `${initialData.filter(d => d.status === "세탁 필요").length}<span>벌</span>`;
+            document.getElementById('availableCount').innerHTML = `${initialData.filter(d => d.status === "사용 가능").length}<span>벌</span>`;
+        }
+
+        function renderComponents() {
+            const tbody = document.getElementById('robeTableBody');
+            const selectLaundry = document.getElementById('selectRobe');
+            const selectRename = document.getElementById('selectRenameTarget');
+            
+            tbody.innerHTML = '';
+            selectLaundry.innerHTML = '<option value="" disabled selected>복사복 번호 선택</option>';
+            selectRename.innerHTML = '<option value="" disabled selected>선택</option>';
+
+            initialData.forEach((item, index) => {
+                let statusClass = item.status === '사용 가능' ? 'status-available' : item.status === '세탁 중' ? 'status-laundry' : 'status-need';
+                const row = `<tr>
+                    <td><strong style="color: #fff;">${item.id}</strong></td>
+                    <td><span class="badge ${statusClass}" onclick="rotateStatus('${item.id}')">${item.status} <i class="fas fa-sync-alt" style="font-size:10px; margin-left:3px; opacity:0.7;"></i></span></td>
+                    <td>${item.lastDate}</td>
+                    <td>${item.member}</td>
+                    <td><span>${item.gap}</span></td>
+                    <td>
+                        <button class="btn-action btn-rotate" onclick="rotateStatus('${item.id}')">다음상태</button>
+                        <button class="btn-action btn-delete" onclick="deleteRobe(${index})">삭제</button>
+                    </td>
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+
+                const optL = document.createElement('option'); optL.value = item.id; optL.textContent = item.id; selectLaundry.appendChild(optL);
+                const optR = document.createElement('option'); optR.value = item.id; optR.textContent = item.id; selectRename.appendChild(optR);
+            });
+            updateSummary();
+        }
+
+        function rotateStatus(id) {
+            const matchItem = initialData.find(item => item.id === id);
+            if (matchItem) {
+                if (matchItem.status === '사용 가능') {
+                    matchItem.status = '세탁 중';
+                } else if (matchItem.status === '세탁 중') {
+                    matchItem.status = '세탁 필요';
+                } else {
+                    matchItem.status = '사용 가능';
+                    matchItem.gap = '0일';
+                }
+                saveToLocalStorage();
+                renderComponents();
+            }
+        }
+
+        function deleteRobe(index) {
+            if(confirm("정말 이 복사복 데이터를 목록에서 삭제하시겠습니까?")) {
+                initialData.splice(index, 1);
+                saveToLocalStorage();
+                renderComponents();
+            }
+        }
+
+        document.getElementById('robeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const num = document.getElementById('robeNum').value.trim();
+            if(initialData.some(item => item.id === num)) return alert('중복된 번호입니다.');
+            initialData.push({ id: num, status: '사용 가능', lastDate: '-', member: '-', gap: '-' });
+            saveToLocalStorage();
+            renderComponents(); this.reset();
+        });
+
+        document.getElementById('renameForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const targetId = document.getElementById('selectRenameTarget').value;
+            const newName = document.getElementById('newRobeName').value.trim();
+            if(initialData.some(item => item.id === newName)) return alert('이미 존재하는 번호입니다.');
+            const matchItem = initialData.find(item => item.id === targetId);
+            if(matchItem) {
+                matchItem.id = newName;
+                saveToLocalStorage();
+                renderComponents(); this.reset();
+                alert(`명칭이 [${newName}]으로 변경되었습니다.`);
+            }
+        });
+
+        document.getElementById('laundryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const targetId = document.getElementById('selectRobe').value;
+            const matchItem = initialData.find(item => item.id === targetId);
+            if(matchItem) {
+                matchItem.status = '세탁 중';
+                matchItem.lastDate = document.getElementById('laundryDate').value;
+                matchItem.member = document.getElementById('laundryIncharge').value.trim();
+                matchItem.gap = '0일';
+                saveToLocalStorage();
+                renderComponents(); this.reset();
+                document.getElementById('laundryDate').value = new Date().toISOString().substring(0, 10);
+            }
+        });
+
+        window.onload = function() {
+            document.getElementById('laundryDate').value = new Date().toISOString().substring(0, 10);
+            renderComponents();
+        };
+    </script>
+</body>
+</html>
